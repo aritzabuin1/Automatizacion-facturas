@@ -16,3 +16,10 @@ streamlit
 plotly
 watchdog  # For folder monitoring
 streamlit-authenticator  # For dashboard authentication
+
+# Security
+cryptography  # For data encryption
+bcrypt  # For password hashing
+pyjwt  # For JWT tokens
+python-jose[cryptography]  # For secure tokens
+slowapi  # For rate limiting
