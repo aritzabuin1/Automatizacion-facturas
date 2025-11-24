@@ -1,0 +1,40 @@
+# Añadir .env al .gitignore para evitar subir secrets
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Datos locales
+data/
+output/
+logs/
+facturas_input/*.pdf
+facturas_input/*.jpg
+facturas_input/*.png
+facturas_input/*.jpeg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+app.log
+
+# Temporales
+*.tmp
+*.bak

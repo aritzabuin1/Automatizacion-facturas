@@ -1,0 +1,174 @@
+# =============================================================================
+# DOCKER COMPOSE - Orquestación de Servicios
+# =============================================================================
+# ¿QUÉ ES DOCKER COMPOSE?
+# Es una herramienta para definir y ejecutar aplicaciones Docker multi-contenedor.
+# En lugar de ejecutar múltiples comandos `docker run`, defines todo en este archivo YAML.
+#
+# ¿POR QUÉ LO USAMOS?
+# 1. Simplicidad: Un solo comando (docker-compose up) levanta toda la aplicación
+# 2. Networking: Los contenedores pueden comunicarse entre sí automáticamente
+# 3. Volúmenes: Gestión centralizada de datos persistentes
+# 4. Escalabilidad: Fácil añadir servicios (ej: PostgreSQL, Redis)
+#
+# ARQUITECTURA DE ESTA APLICACIÓN:
+# - watcher: Servicio que vigila la carpeta y procesa facturas automáticamente
+# - dashboard: Interfaz web (Streamlit) para visualizar datos
+# - (futuro) db: PostgreSQL para producción multi-usuario
+# =============================================================================
+
+version: '3.8'  # Versión del formato de docker-compose
+
+# -----------------------------------------------------------------------------
+# SERVICIOS
+# -----------------------------------------------------------------------------
+services:
+  
+  # ---------------------------------------------------------------------------
+  # WATCHER: Procesamiento automático de facturas
+  # ---------------------------------------------------------------------------
+  watcher:
+    # Construir desde el Dockerfile local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Nombre del contenedor (más legible que IDs aleatorios)
+    container_name: facturas-watcher
+    
+    # RESTART POLICY (CRÍTICO EN PRODUCCIÓN)
+    # ¿Qué pasa si el contenedor crashea o el servidor se reinicia?
+    # - no: No reiniciar (solo para desarrollo)
+    # - always: Siempre reiniciar (incluso si lo paras manualmente)
+    # - unless-stopped: Reiniciar excepto si lo paraste manualmente
+    # - on-failure: Solo reiniciar si crasheó (exit code != 0)
+    restart: unless-stopped
+    
+    # Variables de entorno
+    environment:
+      # IMPORTANTE: En producción, NO pongas la API key aquí directamente
+      # Usa un archivo .env (ver ejemplo abajo)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - WATCH_FOLDER=/app/facturas_input
+      - PYTHONUNBUFFERED=1  # Ver logs en tiempo real
+    
+    # VOLÚMENES: Persistencia de datos
+    # ¿POR QUÉ? Los contenedores son efímeros (se borran al parar).
+    # Los volúmenes persisten los datos fuera del contenedor.
+    # Formato: ruta_host:ruta_contenedor[:opciones]
+    volumes:
+      # Carpeta de entrada (donde el cliente deja las facturas)
+      - ./facturas_input:/app/facturas_input
+      
+      # Base de datos (SQLite)
+      - ./data:/app/data
+      
+      # Salida (CSV, Excel)
+      - ./output:/app/output
+      
+      # Logs (para debugging)
+      - ./logs:/app/logs
+    
+    # Comando a ejecutar (sobrescribe el CMD del Dockerfile)
+    command: ["watcher_service.py"]
+    
+    # HEALTHCHECK: Verificar que el servicio está vivo
+    # Docker puede reiniciar automáticamente si falla el healthcheck
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+  
+  # ---------------------------------------------------------------------------
+  # DASHBOARD: Interfaz web de visualización
+  # ---------------------------------------------------------------------------
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: facturas-dashboard
+    restart: unless-stopped
+    
+    # Puerto expuesto: host:contenedor
+    # Acceder desde: http://localhost:8501
+    ports:
+      - "8501:8501"
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    volumes:
+      # Solo necesita acceso a la DB (lectura)
+      - ./data:/app/data:ro  # :ro = read-only (seguridad)
+    
+    command: ["streamlit", "run", "dashboard.py", "--server.headless", "true"]
+    
+    # DEPENDS_ON: Orden de inicio
+    # El dashboard esperará a que el watcher esté "started"
+    # (NO espera a que esté "healthy", solo que haya arrancado)
+    depends_on:
+      - watcher
+
+# -----------------------------------------------------------------------------
+# VOLÚMENES NOMBRADOS (Opcional, para producción avanzada)
+# -----------------------------------------------------------------------------
+# En lugar de montar carpetas locales (./data), puedes usar volúmenes nombrados
+# que Docker gestiona automáticamente. Útil para backups y migraciones.
+#
+# volumes:
+#   facturas_data:
+#     driver: local
+#   facturas_logs:
+#     driver: local
+
+# -----------------------------------------------------------------------------
+# NETWORKS (Opcional, para producción avanzada)
+# -----------------------------------------------------------------------------
+# Por defecto, docker-compose crea una red para que los servicios se comuniquen.
+# Puedes definir redes personalizadas para aislar servicios.
+#
+# networks:
+#   frontend:
+#     driver: bridge
+#   backend:
+#     driver: bridge
+
+# =============================================================================
+# CÓMO USAR ESTE ARCHIVO
+# =============================================================================
+# 1. Crear archivo .env en la raíz del proyecto:
+#    OPENAI_API_KEY=sk-tu-key-aqui
+#
+# 2. Levantar todos los servicios:
+#    docker-compose up -d
+#    (-d = detached, corre en segundo plano)
+#
+# 3. Ver logs:
+#    docker-compose logs -f watcher
+#    docker-compose logs -f dashboard
+#
+# 4. Parar servicios:
+#    docker-compose down
+#
+# 5. Reconstruir (después de cambios en el código):
+#    docker-compose up -d --build
+#
+# 6. Ejecutar comando en un contenedor:
+#    docker-compose exec watcher python main.py ./facturas_input
+#
+# 7. Ver estado de servicios:
+#    docker-compose ps
+#
+# =============================================================================
+# PRODUCCIÓN: DESPLIEGUE EN SERVIDOR
+# =============================================================================
+# 1. Copiar el proyecto al servidor (sin .venv, data, logs)
+# 2. Crear .env con la API key
+# 3. docker-compose up -d
+# 4. Configurar backup automático de ./data (cron + rsync/rclone)
+# 5. Configurar reverse proxy (nginx) para HTTPS en el dashboard
+# 6. Monitorizar logs: docker-compose logs -f --tail=100
+# =============================================================================

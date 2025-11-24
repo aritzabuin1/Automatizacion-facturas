@@ -1,0 +1,48 @@
+# =============================================================================
+# CONFIGURACIÓN DE STREAMLIT - TEMA PERSONALIZADO
+# =============================================================================
+# Este archivo configura el tema visual de Streamlit.
+# Se coloca en .streamlit/config.toml
+#
+# ¿POR QUÉ UN TEMA PERSONALIZADO?
+# - Branding: Colores de tu empresa
+# - Profesionalidad: Tema oscuro moderno
+# - Consistencia: Mismo look en todos los despliegues
+# =============================================================================
+
+[theme]
+# Color primario (botones, links, etc.)
+primaryColor = "#667eea"
+
+# Color de fondo
+backgroundColor = "#0e1117"
+
+# Color de fondo secundario (sidebar, cards)
+secondaryBackgroundColor = "#262730"
+
+# Color del texto
+textColor = "#fafafa"
+
+# Fuente
+font = "sans serif"
+
+[server]
+# Deshabilitar el watchdog en producción (evita recargas innecesarias)
+fileWatcherType = "none"
+
+# Puerto por defecto
+port = 8501
+
+# Permitir CORS (si se accede desde otro dominio)
+enableCORS = false
+
+# Habilitar XSRF protection
+enableXsrfProtection = true
+
+[browser]
+# No abrir navegador automáticamente (útil en servidores)
+gatherUsageStats = false
+
+[runner]
+# Ejecutar scripts más rápido
+fastReruns = true

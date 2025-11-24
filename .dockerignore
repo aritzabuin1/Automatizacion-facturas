@@ -1,0 +1,74 @@
+# =============================================================================
+# .dockerignore - Optimización del Build Context
+# =============================================================================
+# ¿QUÉ ES ESTO?
+# Similar a .gitignore, pero para Docker. Le dice a Docker qué archivos NO copiar
+# al contenedor durante el build.
+#
+# ¿POR QUÉ ES IMPORTANTE?
+# 1. Velocidad: Menos archivos = build más rápido
+# 2. Seguridad: No copiar .env con secrets al contenedor
+# 3. Tamaño: No incluir archivos innecesarios en la imagen final
+#
+# EJEMPLO: Si tu carpeta tiene 1GB de datos de prueba y no excluyes nada,
+# Docker copiará ese 1GB cada vez que hagas build (lentísimo).
+# =============================================================================
+
+# Entornos virtuales (no los necesitamos en el contenedor)
+.venv/
+venv/
+env/
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Archivos de configuración local (NO deben ir al contenedor)
+.env
+*.env.local
+
+# Datos locales (se montarán como volúmenes)
+data/
+output/
+logs/
+facturas_input/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentación y desarrollo
+README.md
+*.md
+docs/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.log
+*.bak
+
+# Archivos de test
+tests/
+test_*.py
+*_test.py
+
+# Archivos de CI/CD (no necesarios en runtime)
+.github/
+.gitlab-ci.yml

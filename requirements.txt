@@ -1,0 +1,18 @@
+# Core libraries for AI extraction
+openai
+instructor
+pydantic
+
+# CLI and Utilities
+typer
+rich
+python-dotenv
+
+# Database and Data handling
+sqlalchemy
+pandas
+openpyxl  # For Excel export
+streamlit
+plotly
+watchdog  # For folder monitoring
+streamlit-authenticator  # For dashboard authentication
